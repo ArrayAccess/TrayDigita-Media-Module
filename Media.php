@@ -73,24 +73,7 @@ final class Media extends AbstractModule
             }
         }
 
-        $this->doRegisterEntities();
         $this->doFilterPath();
-    }
-
-    /**
-     * Register entities
-     * @return void
-     */
-    private function doRegisterEntities(): void
-    {
-        $metadata = ContainerHelper::use(Connection::class, $this->getContainer())
-            ?->getDefaultConfiguration()
-            ->getMetadataDriverImpl();
-        if ($metadata instanceof AttributeDriver) {
-            $metadata->addPaths([
-                __DIR__ . '/Entities'
-            ]);
-        }
     }
 
     public function getRequest(): ?ServerRequestInterface
