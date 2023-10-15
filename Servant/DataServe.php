@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace ArrayAccess\TrayDigita\App\Modules\Media\Servant;
 
 // phpcs:disable PSR1.Files.SideEffects
+use ArrayAccess\TrayDigita\App\Modules\Media\Media;
 use ArrayAccess\TrayDigita\Util\Filter\DataNormalizer;
 use ArrayAccess\TrayDigita\Util\Filter\MimeType;
 use DateTimeImmutable;
@@ -76,6 +77,7 @@ final class DataServe
         return MimeType::fileMimeType($file);
     }
 
+    /** @noinspection PhpUnused */
     public function getLastModified(string $file) : ?DateTimeImmutable
     {
         $file = $this->getNormalizeFile($file);
