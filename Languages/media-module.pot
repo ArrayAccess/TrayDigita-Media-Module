@@ -2,7 +2,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: TrayDigita Media Module 1.0.0\n"
-"POT-Creation-Date: 2023-10-16 00:01+0700\n"
+"POT-Creation-Date: 2023-10-16 01:39+0700\n"
 "PO-Revision-Date: 2023-09-24 19:00+0700\n"
 "Last-Translator: ArrayAccess\n"
 "Language-Team: ArrayAccess\n"
@@ -25,3 +25,37 @@ msgstr ""
 "X-Poedit-SearchPathExcluded-0: *.css\n"
 "X-Poedit-SearchPathExcluded-1: *.html\n"
 "X-Poedit-SearchPathExcluded-2: *.json\n"
+
+#: Media.php:45
+msgctxt "module"
+msgid "Media Manager"
+msgstr ""
+
+#: Media.php:54
+msgctxt "module"
+msgid ""
+"Module to make application support media & file "
+"attachments"
+msgstr ""
+
+#: Uploader/Abstracts/AbstractUploader.php:126
+msgctxt "module"
+msgid "File does not have file name"
+msgstr ""
+
+#: Uploader/Abstracts/AbstractUploader.php:141
+#, php-format
+msgctxt "module"
+msgid "Could not determine file type from mimetype %s"
+msgstr ""
+
+#: Uploader/Abstracts/AbstractUploader.php:221
+msgctxt "module"
+msgid "Could not save uploaded file"
+msgstr ""
+
+#: Uploader/Abstracts/AbstractUploader.php:233
+msgctxt "module"
+msgid ""
+"Could not save uploaded file & determine target file."
+msgstr ""

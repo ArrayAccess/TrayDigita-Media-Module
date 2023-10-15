@@ -58,6 +58,7 @@ class AbstractUploader
 
     /**
      * @throws Throwable
+     * @noinspection PhpUnused
      */
     public function uploadAvatar(
         ServerRequestInterface $request,
@@ -74,6 +75,7 @@ class AbstractUploader
 
     /**
      * @throws Throwable
+     * @noinspection PhpUnused
      */
     public function uploadData(
         ServerRequestInterface $request,
@@ -120,7 +122,11 @@ class AbstractUploader
         };
         if (!$uploadedFile->getClientFilename()) {
             throw new UploadedFileNameException(
-                $this->translate('File does not have file name')
+                $this->translateContext(
+                    'File does not have file name',
+                    'module',
+                    'media-module'
+                )
             );
         }
         $extension = pathinfo($uploadedFile->getClientFilename(), PATHINFO_EXTENSION);
@@ -131,7 +137,11 @@ class AbstractUploader
         if (!$extension) {
             throw new UploadedFileExtensionException(
                 sprintf(
-                    $this->translate('Could not determine file type from mimetype %s'),
+                    $this->translateContext(
+                        'Could not determine file type from mimetype %s',
+                        'module',
+                        'media-module'
+                    ),
                     $uploadedFile->getClientMediaType()
                 )
             );
@@ -207,7 +217,11 @@ class AbstractUploader
         if (!$fullPath) {
             $progress->deletePartial();
             throw new RuntimeException(
-                $this->translate('Could not save uploaded file')
+                $this->translateContext(
+                    'Could not save uploaded file',
+                    'module',
+                    'media-module'
+                )
             );
         }
 
@@ -215,8 +229,10 @@ class AbstractUploader
         if (!$basePath) {
             Consolidation::callbackReduceError(fn () => unlink($fullPath));
             throw new RuntimeException(
-                $this->translate(
-                    'Could not save uploaded file & determine target file.'
+                $this->translateContext(
+                    'Could not save uploaded file & determine target file.',
+                    'module',
+                    'media-module'
                 )
             );
         }
