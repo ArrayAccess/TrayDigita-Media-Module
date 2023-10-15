@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace ArrayAccess\TrayDigita\App\Modules\Media\Media\Uploader;
+namespace ArrayAccess\TrayDigita\App\Modules\Media\Uploader;
 
-use ArrayAccess\TrayDigita\App\Modules\Media\Media\Uploader\Abstracts\AbstractUploader;
+use ArrayAccess\TrayDigita\App\Modules\Media\Uploader\Abstracts\AbstractUploader;
 use ArrayAccess\TrayDigita\Database\Entities\Abstracts\AbstractAttachment;
 use ArrayAccess\TrayDigita\Http\UploadedFile;
 use ArrayAccess\TrayDigita\Uploader\StartProgress;

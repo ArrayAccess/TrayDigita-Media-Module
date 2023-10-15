@@ -25,7 +25,7 @@
     },
     "autoload": {
         "psr-4": {
-            "ArrayAccess\\TrayDigita\\App\\Modules\\Media\\" : "./"
+            "ArrayAccess\\TrayDigita\\App\\Modules\\Media\\" : ""
         }
     },
     "config": {

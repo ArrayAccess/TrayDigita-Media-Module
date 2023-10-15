@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace ArrayAccess\TrayDigita\App\Modules\Media\Media\Traits;
+namespace ArrayAccess\TrayDigita\App\Modules\Media\Traits;
 
 use ArrayAccess\TrayDigita\Database\Entities\Abstracts\AbstractUser;
 use ArrayAccess\TrayDigita\Exceptions\InvalidArgument\UnsupportedArgumentException;

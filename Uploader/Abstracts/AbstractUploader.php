@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace ArrayAccess\TrayDigita\App\Modules\Media\Media\Uploader\Abstracts;
+namespace ArrayAccess\TrayDigita\App\Modules\Media\Uploader\Abstracts;
 
 use ArrayAccess\TrayDigita\App\Modules\Users\Entities\Admin;
 use ArrayAccess\TrayDigita\App\Modules\Users\Entities\Attachment;
 use ArrayAccess\TrayDigita\App\Modules\Users\Entities\User;
 use ArrayAccess\TrayDigita\App\Modules\Users\Entities\UserAttachment;
-use ArrayAccess\TrayDigita\App\Modules\Media\Media\Media;
-use ArrayAccess\TrayDigita\App\Modules\Media\Media\Uploader\UploadedFileMetadata;
+use ArrayAccess\TrayDigita\App\Modules\Media\Media;
+use ArrayAccess\TrayDigita\App\Modules\Media\Uploader\UploadedFileMetadata;
 use ArrayAccess\TrayDigita\Database\Connection;
 use ArrayAccess\TrayDigita\Database\Entities\Abstracts\AbstractAttachment;
 use ArrayAccess\TrayDigita\Database\Entities\Abstracts\AbstractUser;

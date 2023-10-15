@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace ArrayAccess\TrayDigita\App\Modules\Media\Media\Traits;
+namespace ArrayAccess\TrayDigita\App\Modules\Media\Traits;
 
 use ArrayAccess\TrayDigita\App\Modules\Users\Entities\Admin;
 use ArrayAccess\TrayDigita\Collection\Config;

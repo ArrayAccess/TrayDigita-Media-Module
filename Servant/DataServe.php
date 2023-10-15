@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace ArrayAccess\TrayDigita\App\Modules\Media\Media;
+namespace ArrayAccess\TrayDigita\App\Modules\Media\Servant;
 
 // phpcs:disable PSR1.Files.SideEffects
 use ArrayAccess\TrayDigita\Util\Filter\DataNormalizer;
