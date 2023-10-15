@@ -8,14 +8,12 @@ use ArrayAccess\TrayDigita\App\Modules\Media\Traits\MediaFilterTrait;
 use ArrayAccess\TrayDigita\App\Modules\Media\Traits\MediaPathTrait;
 use ArrayAccess\TrayDigita\App\Modules\Media\Uploader\AdminUpload;
 use ArrayAccess\TrayDigita\App\Modules\Media\Uploader\UserUpload;
-use ArrayAccess\TrayDigita\Database\Connection;
 use ArrayAccess\TrayDigita\L10n\Translations\Adapter\Gettext\PoMoAdapter;
 use ArrayAccess\TrayDigita\Module\AbstractModule;
 use ArrayAccess\TrayDigita\Traits\Service\TranslatorTrait;
 use ArrayAccess\TrayDigita\Uploader\Chunk;
 use ArrayAccess\TrayDigita\Uploader\StartProgress;
 use ArrayAccess\TrayDigita\Util\Filter\ContainerHelper;
-use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
 
