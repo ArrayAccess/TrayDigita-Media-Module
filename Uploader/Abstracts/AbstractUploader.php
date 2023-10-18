@@ -25,14 +25,21 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
 use Throwable;
 use function file_exists;
+use function file_get_contents;
+use function file_put_contents;
+use function filesize;
 use function function_exists;
+use function is_file;
+use function is_string;
 use function mime_content_type;
 use function pathinfo;
+use function preg_match;
 use function reset;
 use function sprintf;
 use function unlink;
 use const PATHINFO_EXTENSION;
 use const PATHINFO_FILENAME;
+use const PHP_INT_MAX;
 
 class AbstractUploader
 {
@@ -161,6 +168,52 @@ class AbstractUploader
         $uploadedFile = MimeType::resolveMediaTypeUploadedFiles($uploadedFile);
         $originalFileName = $uploadedFile->getClientFilename();
         $progress = $this->media->upload($uploadedFile, $request);
+        $mimeFile = $progress->targetCacheFile
+            . '.mime_type.'
+            . $progress->handler->processor->chunk->partialExtension;
+        $newMimeType = null;
+        if ($progress->handler->processor->isNewRequestId) {
+            $newMimeType = $uploadedFile->getClientMediaType();
+            if (!file_exists($mimeFile)) {
+                // save mime-type
+                file_put_contents($mimeFile, $newMimeType);
+            }
+            $this->getMedia()->getManager()->attach(
+                'jsonResponder.format',
+                function ($e) use ($newMimeType) {
+                    $e['mime'] = $newMimeType;
+                    return $e;
+                },
+                priority: PHP_INT_MAX - 5
+            );
+        } elseif (is_file($mimeFile)) {
+            $validMime = false;
+            // check filesize
+            if (filesize($mimeFile) <= 128) {
+                $mime = Consolidation::callbackReduceError(fn() => file_get_contents($mimeFile));
+                if (is_string($mime)
+                    && strlen($mime) <= 128
+                    && preg_match('~^[^/]+/\S+$~', $mime)
+                    && MimeType::fromMimeType($mime)
+                ) {
+                    $newMimeType = $mime;
+                    $validMime = true;
+                }
+            }
+            if (!$validMime) {
+                // delete if longer
+                Consolidation::callbackReduceError(fn() => unlink($mimeFile));
+            }
+        }
+        if ($newMimeType && $newMimeType !== $uploadedFile->getClientMediaType()) {
+            $uploadedFile = new UploadedFile(
+                $uploadedFile->getStream(),
+                $uploadedFile->getSize(),
+                $uploadedFile->getError(),
+                $uploadedFile->getClientFilename(),
+                $newMimeType
+            );
+        }
         if (!$progress->isDone()) {
             return new UploadedFileMetadata(
                 $this,
@@ -172,119 +225,126 @@ class AbstractUploader
             );
         }
 
-        $extension = pathinfo($uploadedFile->getClientFilename(), PATHINFO_EXTENSION);
-        $newMimeType = MimeType::mime($extension);
-        if ($progress->getSize() > $uploadedFile->getSize()
-            && $newMimeType !== $uploadedFile->getClientMediaType()
-            // check the mime type
-            && (
-                function_exists('mime_content_type')
-                && ($newMime = mime_content_type($progress->targetCacheFile))
-                && $newMime !== $uploadedFile->getClientMediaType()
-                || ! ($newMime??null)
-            )
-        ) {
-            $newMime ??= $newMimeType;
-            $uploadedFile = new UploadedFile(
-                $uploadedFile->getStream(),
-                $uploadedFile->getSize(),
-                $uploadedFile->getError(),
-                $uploadedFile->getClientFilename(),
-                $newMime
-            );
-        }
-
-        if ($type === self::TYPE_AVATAR) {
-            $filePath = $this->media->getAvatarUploadFullPathByUser($uploadedFile, $user, true);
-            $uploadedFile = $this->getUploadedFileAvatar(
-                $uploadedFile,
-                $filePath
-            );
-        } else {
-            $uploadDirectory = match ($type) {
-                self::TYPE_UPLOAD => $this->media->determineUploadDirectory($uploadedFile, $user, true),
-                default => $this->media->determineDataDirectory($uploadedFile, $user, true),
-            };
-            $clientFileName = $this->media->filterFileNameUseLower($uploadedFile, true);
-            $filePath = $uploadDirectory . '/' . $clientFileName;
-        }
-
-        $fullPath = $progress->put(
-            $filePath,
-            $type === self::TYPE_AVATAR
-        );
-
-        if (!$fullPath) {
-            $progress->deletePartial();
-            throw new RuntimeException(
-                $this->translateContext(
-                    'Could not save uploaded file',
-                    'module',
-                    'media-module'
-                )
-            );
-        }
-
-        $basePath = $this->media->getAttachmentFileToBasePath($fullPath);
-        if (!$basePath) {
-            Consolidation::callbackReduceError(fn () => unlink($fullPath));
-            throw new RuntimeException(
-                $this->translateContext(
-                    'Could not save uploaded file & determine target file.',
-                    'module',
-                    'media-module'
-                )
-            );
-        }
-
         try {
-            $attachment = $repository
-                ->findOneBy([
-                    'path' => $basePath,
-                    'storage_type' => $type
-                ]);
-            if (!$attachment) {
-                $name = pathinfo($originalFileName, PATHINFO_FILENAME);
-                $attachment = new $className();
-                $attachment->setEntityManager($em);
-                $attachment->setPath($basePath);
-                $attachment->setName($name?:$originalFileName);
-                $attachment->setStatus($attachment::PUBLISHED);
+            $extension = pathinfo($uploadedFile->getClientFilename(), PATHINFO_EXTENSION);
+            if (!$newMimeType) {
+                $newMimeType = MimeType::mime($extension);
+                if ($progress->getSize() > $uploadedFile->getSize()
+                    && $newMimeType !== $uploadedFile->getClientMediaType()
+                    // check the mime type
+                    && (
+                        function_exists('mime_content_type')
+                        && ($newMime = mime_content_type($progress->targetCacheFile))
+                        && $newMime !== $uploadedFile->getClientMediaType()
+                        || !($newMime ?? null)
+                    )
+                ) {
+                    $newMime ??= $newMimeType;
+                    $uploadedFile = new UploadedFile(
+                        $uploadedFile->getStream(),
+                        $uploadedFile->getSize(),
+                        $uploadedFile->getError(),
+                        $uploadedFile->getClientFilename(),
+                        $newMime
+                    );
+                }
             }
 
-            if ($user instanceof Admin || $user instanceof User) {
-                $attachment->setUser($user);
-                $attachment->setUserId($user->getId());
+            if ($type === self::TYPE_AVATAR) {
+                $filePath = $this->media->getAvatarUploadFullPathByUser($uploadedFile, $user, true);
+                $uploadedFile = $this->getUploadedFileAvatar(
+                    $uploadedFile,
+                    $filePath
+                );
+            } else {
+                $uploadDirectory = match ($type) {
+                    self::TYPE_UPLOAD => $this->media->determineUploadDirectory($uploadedFile, $user, true),
+                    default => $this->media->determineDataDirectory($uploadedFile, $user, true),
+                };
+                $clientFileName = $this->media->filterFileNameUseLower($uploadedFile, true);
+                $filePath = $uploadDirectory . '/' . $clientFileName;
             }
 
-            $attachment->setFileName($originalFileName);
-            $attachment->setStorageType($attachment::TYPE_UPLOAD);
-            $attachment->setSize($progress->getSize());
-            $attachment->setDeletedAt(null);
-            $attachment->setMimeType($uploadedFile->getClientMediaType());
-            $em->persist($attachment);
-            $em->flush();
-        } catch (Throwable $e) {
-            if (file_exists($fullPath)) {
+            $fullPath = $progress->put(
+                $filePath,
+                $type === self::TYPE_AVATAR
+            );
+
+            if (!$fullPath) {
+                $progress->deletePartial();
+                throw new RuntimeException(
+                    $this->translateContext(
+                        'Could not save uploaded file',
+                        'module',
+                        'media-module'
+                    )
+                );
+            }
+
+            $basePath = $this->media->getAttachmentFileToBasePath($fullPath);
+            if (!$basePath) {
                 Consolidation::callbackReduceError(fn() => unlink($fullPath));
+                throw new RuntimeException(
+                    $this->translateContext(
+                        'Could not save uploaded file & determine target file.',
+                        'module',
+                        'media-module'
+                    )
+                );
             }
-            throw $e;
-        }
 
-        $result = new UploadedFileMetadata(
-            $this,
-            $type,
-            $request,
-            $uploadedFile,
-            $progress,
-            true,
-            $fullPath,
-            $attachment
-        );
-        if ($type === self::TYPE_AVATAR) {
-            $result = $this->dispatchAvatarUpload($result);
-        }
+            try {
+                $attachment = $repository
+                    ->findOneBy([
+                        'path' => $basePath,
+                        'storage_type' => $type
+                    ]);
+                if (!$attachment) {
+                    $name = pathinfo($originalFileName, PATHINFO_FILENAME);
+                    $attachment = new $className();
+                    $attachment->setEntityManager($em);
+                    $attachment->setPath($basePath);
+                    $attachment->setName($name ?: $originalFileName);
+                    $attachment->setStatus($attachment::PUBLISHED);
+                }
 
+                if ($user instanceof Admin || $user instanceof User) {
+                    $attachment->setUser($user);
+                    $attachment->setUserId($user->getId());
+                }
+
+                $attachment->setFileName($originalFileName);
+                $attachment->setStorageType($attachment::TYPE_UPLOAD);
+                $attachment->setSize($progress->getSize());
+                $attachment->setDeletedAt(null);
+                $attachment->setMimeType($uploadedFile->getClientMediaType());
+                $em->persist($attachment);
+                $em->flush();
+            } catch (Throwable $e) {
+                if (file_exists($fullPath)) {
+                    Consolidation::callbackReduceError(fn() => unlink($fullPath));
+                }
+                throw $e;
+            }
+
+            $result = new UploadedFileMetadata(
+                $this,
+                $type,
+                $request,
+                $uploadedFile,
+                $progress,
+                true,
+                $fullPath,
+                $attachment
+            );
+            if ($type === self::TYPE_AVATAR) {
+                $result = $this->dispatchAvatarUpload($result);
+            }
+        } finally {
+            if (is_file($mimeFile)) {
+                Consolidation::callbackReduceError(fn() => unlink($mimeFile));
+            }
+        }
         return $result;
     }
 

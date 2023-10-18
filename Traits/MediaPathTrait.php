@@ -200,6 +200,7 @@ trait MediaPathTrait
             'text/javascript',
             'text/ecmascript',
             'application/sql',
+            'application/x-sql',
             'text/x-php',
             'application/x-php',
             'application/json',
