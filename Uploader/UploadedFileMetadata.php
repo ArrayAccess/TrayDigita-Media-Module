@@ -12,6 +12,7 @@ use Psr\Http\Message\UriInterface;
 use function basename;
 use function file_exists;
 use function filesize;
+use function microtime;
 use function pathinfo;
 use const PATHINFO_FILENAME;
 
@@ -28,7 +29,10 @@ readonly class UploadedFileMetadata
         public StartProgress $progress,
         public bool $finished,
         public ?string $fullPath = null,
-        public ?AbstractAttachment $attachment = null
+        public ?AbstractAttachment $attachment = null,
+        public ?float $firstMicrotime = null,
+        public ?int $chunkCount = null,
+        public array $timing = [],
     ) {
         $this->size = $this->fullPath && file_exists($this->fullPath)
             ? filesize($this->fullPath)
@@ -37,17 +41,22 @@ readonly class UploadedFileMetadata
 
     /**
      * @param bool $pathOnly
+     * @param bool $withTiming
      * @return array{
      *     id: ?string,
-     *     uuid: string,
+     *     request_id: string,
+     *     name: string,
      *     file_name: string,
      *     mime_type: string,
-     *     saved_name: string,
+     *     saved_name: ?string,
      *     uri: ?UriInterface|?string,
-     *     size: int
+     *     size: int,
+     *     processed_count: int,
+     *     processed_time: ?float,
+     *     timing: array,
      * }
      */
-    public function toArray(bool $pathOnly = false): array
+    public function toArray(bool $pathOnly = false, bool $withTiming = true): array
     {
         $uploadedFile = $this->uploadedFile;
         $fileName = $uploadedFile->getClientFilename();
@@ -66,6 +75,13 @@ readonly class UploadedFileMetadata
             'saved_name' => $this->finished ? basename($this->fullPath) : null,
             'uri' => $uri,
             'size' => $this->size,
+            'processed_count' => $this->chunkCount,
+            'processed_time' => (
+                $this->firstMicrotime
+                ? round(microtime(true) - $this->firstMicrotime, 10)
+                : null
+            ),
+            'timing' => $this->timing
         ];
     }
 }

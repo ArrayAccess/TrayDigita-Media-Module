@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace ArrayAccess\TrayDigita\App\Modules\Media\Uploader\Abstracts;
 
+use ArrayAccess\TrayDigita\App\Modules\Media\Media;
+use ArrayAccess\TrayDigita\App\Modules\Media\Uploader\UploadedFileMetadata;
 use ArrayAccess\TrayDigita\App\Modules\Users\Entities\Admin;
 use ArrayAccess\TrayDigita\App\Modules\Users\Entities\Attachment;
 use ArrayAccess\TrayDigita\App\Modules\Users\Entities\User;
 use ArrayAccess\TrayDigita\App\Modules\Users\Entities\UserAttachment;
-use ArrayAccess\TrayDigita\App\Modules\Media\Media;
-use ArrayAccess\TrayDigita\App\Modules\Media\Uploader\UploadedFileMetadata;
 use ArrayAccess\TrayDigita\Database\Connection;
 use ArrayAccess\TrayDigita\Database\Entities\Abstracts\AbstractAttachment;
 use ArrayAccess\TrayDigita\Database\Entities\Abstracts\AbstractUser;
@@ -25,15 +25,10 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
 use Throwable;
 use function file_exists;
-use function file_get_contents;
-use function file_put_contents;
-use function filesize;
 use function function_exists;
 use function is_file;
-use function is_string;
 use function mime_content_type;
 use function pathinfo;
-use function preg_match;
 use function reset;
 use function sprintf;
 use function unlink;
@@ -168,16 +163,17 @@ class AbstractUploader
         $uploadedFile = MimeType::resolveMediaTypeUploadedFiles($uploadedFile);
         $originalFileName = $uploadedFile->getClientFilename();
         $progress = $this->media->upload($uploadedFile, $request);
-        $mimeFile = $progress->targetCacheFile
-            . '.mime_type.'
+        $metafile = $progress->targetCacheFile
+            . '.meta.'
             . $progress->handler->processor->chunk->partialExtension;
-        $newMimeType = null;
+        $metadata = $progress->getMetadata();
+        $newMimeType = $metadata['mimetype']??null;
+        $requestTime = $metadata['first_time']??null;
+        $count = $metadata['count']??null;
+        $timing = $metadata['timing']??[];
+        unset($metadata);
         if ($progress->handler->processor->isNewRequestId) {
-            $newMimeType = $uploadedFile->getClientMediaType();
-            if (!file_exists($mimeFile)) {
-                // save mime-type
-                file_put_contents($mimeFile, $newMimeType);
-            }
+            $count = 1;
             $this->getMedia()->getManager()->attach(
                 'jsonResponder.format',
                 function ($e) use ($newMimeType) {
@@ -186,25 +182,8 @@ class AbstractUploader
                 },
                 priority: PHP_INT_MAX - 5
             );
-        } elseif (is_file($mimeFile)) {
-            $validMime = false;
-            // check filesize
-            if (filesize($mimeFile) <= 128) {
-                $mime = Consolidation::callbackReduceError(fn() => file_get_contents($mimeFile));
-                if (is_string($mime)
-                    && strlen($mime) <= 128
-                    && preg_match('~^[^/]+/\S+$~', $mime)
-                    && MimeType::fromMimeType($mime)
-                ) {
-                    $newMimeType = $mime;
-                    $validMime = true;
-                }
-            }
-            if (!$validMime) {
-                // delete if longer
-                Consolidation::callbackReduceError(fn() => unlink($mimeFile));
-            }
         }
+
         if ($newMimeType && $newMimeType !== $uploadedFile->getClientMediaType()) {
             $uploadedFile = new UploadedFile(
                 $uploadedFile->getStream(),
@@ -221,7 +200,10 @@ class AbstractUploader
                 $request,
                 $uploadedFile,
                 $progress,
-                false
+                false,
+                firstMicrotime: $requestTime,
+                chunkCount: $count,
+                timing: $timing
             );
         }
 
@@ -335,14 +317,17 @@ class AbstractUploader
                 $progress,
                 true,
                 $fullPath,
-                $attachment
+                $attachment,
+                firstMicrotime: $requestTime,
+                chunkCount: $count,
+                timing: $timing
             );
             if ($type === self::TYPE_AVATAR) {
                 $result = $this->dispatchAvatarUpload($result);
             }
         } finally {
-            if (is_file($mimeFile)) {
-                Consolidation::callbackReduceError(fn() => unlink($mimeFile));
+            if (is_file($metafile)) {
+                Consolidation::callbackReduceError(fn() => unlink($metafile));
             }
         }
         return $result;

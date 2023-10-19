@@ -9,6 +9,7 @@ use ArrayAccess\TrayDigita\Util\Filter\DataNormalizer;
 use ArrayAccess\TrayDigita\Util\Filter\MimeType;
 use DateTimeImmutable;
 use DateTimeZone;
+use function clearstatcache;
 use function fclose;
 use function feof;
 use function filemtime;
@@ -30,6 +31,12 @@ use function str_starts_with;
 final class DataServe
 {
     private array $cachedSize = [];
+
+    /**
+     * @var array<string, int>
+     */
+    private array $cachedLastModified = [];
+
     private array $cachedNormalize = [];
 
     public function __construct(public readonly Media $uploader)
@@ -84,9 +91,14 @@ final class DataServe
         if (!$file) {
             return null;
         }
+        if (!isset($this->cachedLastModified[$file])) {
+            // clear stat cache
+            clearstatcache(true, $file);
+            $this->cachedLastModified[$file] = filemtime($file);
+        }
         return DateTimeImmutable::createFromFormat(
             'c',
-            gmdate('c', filemtime($file)),
+            gmdate('c', $this->cachedLastModified[$file]),
             new DateTimeZone('UTC')
         );
     }
