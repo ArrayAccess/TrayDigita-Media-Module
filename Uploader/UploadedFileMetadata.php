@@ -41,7 +41,6 @@ readonly class UploadedFileMetadata
 
     /**
      * @param bool $pathOnly
-     * @param bool $withTiming
      * @return array{
      *     id: ?string,
      *     request_id: string,
@@ -56,7 +55,7 @@ readonly class UploadedFileMetadata
      *     timing: array,
      * }
      */
-    public function toArray(bool $pathOnly = false, bool $withTiming = true): array
+    public function toArray(bool $pathOnly = false): array
     {
         $uploadedFile = $this->uploadedFile;
         $fileName = $uploadedFile->getClientFilename();
