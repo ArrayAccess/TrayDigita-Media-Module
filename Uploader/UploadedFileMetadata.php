@@ -6,12 +6,15 @@ namespace ArrayAccess\TrayDigita\App\Modules\Media\Uploader;
 use ArrayAccess\TrayDigita\App\Modules\Media\Uploader\Abstracts\AbstractUploader;
 use ArrayAccess\TrayDigita\Database\Entities\Abstracts\AbstractAttachment;
 use ArrayAccess\TrayDigita\Http\UploadedFile;
+use ArrayAccess\TrayDigita\Uploader\ChunkHandler;
 use ArrayAccess\TrayDigita\Uploader\StartProgress;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 use function basename;
 use function file_exists;
 use function filesize;
+use function is_array;
+use function is_float;
 use function microtime;
 use function pathinfo;
 use const PATHINFO_FILENAME;
@@ -32,6 +35,10 @@ readonly class UploadedFileMetadata
         public ?AbstractAttachment $attachment = null,
         public ?float $firstMicrotime = null,
         public ?int $chunkCount = null,
+        /**
+         * @var array
+         * @see ChunkHandler::writeResource()
+         */
         public array $timing = [],
     ) {
         $this->size = $this->fullPath && file_exists($this->fullPath)
@@ -65,6 +72,15 @@ readonly class UploadedFileMetadata
         if ($pathOnly) {
             $uri = $uri?->getPath();
         }
+        $elapsed = 0;
+        foreach ($this->timing as $item) {
+            if (!is_array($item) || !isset($item['elapsed_time'])
+                || !is_float($item['elapsed_time'])
+            ) {
+                continue;
+            }
+            $elapsed += $item['elapsed_time'];
+        }
         return [
             'id' => $this->attachment?->getId(),
             'request_id' => $this->progress->processor->requestIdHeader->header,
@@ -80,6 +96,7 @@ readonly class UploadedFileMetadata
                 ? round(microtime(true) - $this->firstMicrotime, 10)
                 : null
             ),
+            'elapsed_time' => $elapsed,
             'timing' => $this->timing
         ];
     }
