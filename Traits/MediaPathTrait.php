@@ -62,34 +62,34 @@ trait MediaPathTrait
         $this->registeredPathInit = true;
         $path = ContainerHelper::service(Config::class, $this->getContainer())->get('path');
         $path = $path instanceof Config ? $path : new Config();
-        $dataDir = $path->get('data');
-        if (!$dataDir || !is_string($dataDir)) {
-            $dataDir = dirname(TD_APP_DIRECTORY) . '/data';
+        $dataDirectory = $path->get('data');
+        if (!$dataDirectory || !is_string($dataDirectory)) {
+            $dataDirectory = dirname(TD_APP_DIRECTORY) . '/data';
         }
-        if (!is_dir($dataDir)) {
-            mkdir($dataDir, 0755, true);
+        if (!is_dir($dataDirectory)) {
+            mkdir($dataDirectory, 0755, true);
         }
-        $uploadDir = $path->get('upload');
-        $publicDir = $path->get('public');
-        if (!$uploadDir || !is_string($uploadDir) || !is_dir($uploadDir)) {
-            if (!is_string($publicDir)
-                || !$publicDir
-                || !realpath($publicDir)
+        $uploadDirectory = $path->get('upload');
+        $publicDirectory = $path->get('public');
+        if (!$uploadDirectory || !is_string($uploadDirectory) || !is_dir($uploadDirectory)) {
+            if (!is_string($publicDirectory)
+                || !$publicDirectory
+                || !realpath($publicDirectory)
             ) {
                 if (!defined('TD_INDEX_FILE')) {
                     throw new RuntimeException(
                         'Could not determine public directory'
                     );
                 }
-                $publicDir = dirname(TD_INDEX_FILE);
+                $publicDirectory = dirname(TD_INDEX_FILE);
             } else {
-                $publicDir = realpath($publicDir);
+                $publicDirectory = realpath($publicDirectory);
             }
-            $uploadDir = $publicDir . '/uploads';
+            $uploadDirectory = $publicDirectory . '/uploads';
         }
 
-        $this->dataDirectory = DataNormalizer::normalizeDirectorySeparator($dataDir);
-        $this->uploadDirectory = DataNormalizer::normalizeUnixDirectorySeparator($uploadDir);
+        $this->dataDirectory = DataNormalizer::normalizeDirectorySeparator($dataDirectory);
+        $this->uploadDirectory = DataNormalizer::normalizeUnixDirectorySeparator($uploadDirectory);
         $this->publicDirectory = DataNormalizer::normalizeDirectorySeparator(dirname($this->uploadDirectory));
         return $this;
     }

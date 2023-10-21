@@ -89,19 +89,19 @@ trait MediaFilterTrait
         string $path
     ): ?string {
         $path = DataNormalizer::normalizeUnixDirectorySeparator($path);
-        $uploadDir = DataNormalizer::normalizeUnixDirectorySeparator(
+        $uploadDirectory = DataNormalizer::normalizeUnixDirectorySeparator(
             $this->getUploadDirectory()
         );
-        $dataDir = DataNormalizer::normalizeUnixDirectorySeparator(
+        $dataDirectory = DataNormalizer::normalizeUnixDirectorySeparator(
             $this->getUploadDirectory()
         );
-        $avatarDir = DataNormalizer::normalizeUnixDirectorySeparator(
+        $avatarDirectory = DataNormalizer::normalizeUnixDirectorySeparator(
             $this->getUploadDirectory()
         );
 
-        $currentDirectory = str_starts_with($path, $avatarDir) ? $avatarDir : null;
-        $currentDirectory ??= str_starts_with($path, $uploadDir) ? $uploadDir : null;
-        $currentDirectory ??= str_starts_with($path, $dataDir) ? $dataDir : null;
+        $currentDirectory = str_starts_with($path, $avatarDirectory) ? $avatarDirectory : null;
+        $currentDirectory ??= str_starts_with($path, $uploadDirectory) ? $uploadDirectory : null;
+        $currentDirectory ??= str_starts_with($path, $dataDirectory) ? $dataDirectory : null;
         if (!$currentDirectory) {
             return null;
         }
@@ -122,44 +122,44 @@ trait MediaFilterTrait
         string $path
     ) : ?string {
         $path = DataNormalizer::normalizeUnixDirectorySeparator($path);
-        $uploadDir = DataNormalizer::normalizeUnixDirectorySeparator(
+        $uploadDirectory = DataNormalizer::normalizeUnixDirectorySeparator(
             $this->getUploadDirectory()
         );
         /** @noinspection DuplicatedCode */
-        if (!str_starts_with($path, $uploadDir)) {
+        if (!str_starts_with($path, $uploadDirectory)) {
             return null;
         }
-        $uploadDir = ltrim(substr($path, strlen($uploadDir)), '/');
-        if (str_starts_with($uploadDir, $this->getFrontendPath())
-            || str_starts_with($uploadDir, $this->getBackendPath())
+        $uploadDirectory = ltrim(substr($path, strlen($uploadDirectory)), '/');
+        if (str_starts_with($uploadDirectory, $this->getFrontendPath())
+            || str_starts_with($uploadDirectory, $this->getBackendPath())
         ) {
-            $explode = explode('/', $uploadDir, 2);
+            $explode = explode('/', $uploadDirectory, 2);
             array_shift($explode);
             return implode('/', $explode);
         }
-        return $uploadDir;
+        return $uploadDirectory;
     }
 
     public function getDataFileToBasePath(
         string $path
     ) : ?string {
         $path = DataNormalizer::normalizeUnixDirectorySeparator($path);
-        $dataDir = DataNormalizer::normalizeUnixDirectorySeparator(
+        $dataDirectory = DataNormalizer::normalizeUnixDirectorySeparator(
             $this->getDataDirectory()
         );
         /** @noinspection DuplicatedCode */
-        if (!str_starts_with($path, $dataDir)) {
+        if (!str_starts_with($path, $dataDirectory)) {
             return null;
         }
-        $dataDir = ltrim(substr($path, strlen($dataDir)), '/');
-        if (str_starts_with($dataDir, $this->getFrontendPath())
-            || str_starts_with($dataDir, $this->getBackendPath())
+        $dataDirectory = ltrim(substr($path, strlen($dataDirectory)), '/');
+        if (str_starts_with($dataDirectory, $this->getFrontendPath())
+            || str_starts_with($dataDirectory, $this->getBackendPath())
         ) {
-            $explode = explode('/', $dataDir, 2);
+            $explode = explode('/', $dataDirectory, 2);
             array_shift($explode);
             return implode('/', $explode);
         }
-        return $dataDir;
+        return $dataDirectory;
     }
 
     public function getUploadFileToURI(

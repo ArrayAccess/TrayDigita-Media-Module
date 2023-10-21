@@ -3,26 +3,17 @@ declare(strict_types=1);
 
 namespace ArrayAccess\TrayDigita\App\Modules\Media\Servant;
 
-// phpcs:disable PSR1.Files.SideEffects
 use ArrayAccess\TrayDigita\App\Modules\Media\Media;
+use ArrayAccess\TrayDigita\Responder\FileResponder;
 use ArrayAccess\TrayDigita\Util\Filter\DataNormalizer;
 use ArrayAccess\TrayDigita\Util\Filter\MimeType;
 use DateTimeImmutable;
 use DateTimeZone;
 use function clearstatcache;
-use function fclose;
-use function feof;
 use function filemtime;
 use function filesize;
-use function fopen;
-use function fread;
-use function header;
-use function headers_sent;
 use function is_file;
 use function is_readable;
-use function ob_end_flush;
-use function ob_get_level;
-use function ob_start;
 use function str_starts_with;
 
 /**
@@ -49,10 +40,10 @@ final class DataServe
             return $this->cachedNormalize[$file]?:null;
         }
         $file = DataNormalizer::normalizeDirectorySeparator($file);
-        $uploadDir = $this->uploader->getDataDirectory();
-        if (!str_starts_with($file, $uploadDir)) {
+        $uploadDirectory = $this->uploader->getDataDirectory();
+        if (!str_starts_with($file, $uploadDirectory)) {
             $file = DataNormalizer::normalizeDirectorySeparator(
-                $uploadDir . '/' .$file
+                $uploadDirectory . '/' .$file
             );
         }
         if (is_file($file) && is_readable($file)) {
@@ -103,33 +94,32 @@ final class DataServe
         );
     }
 
+    /**
+     * @param string $file
+     * @param bool $sendHeaderContentLength
+     * @param bool $allowRange
+     * @param bool $sendAsAttachment
+     * @return bool
+     */
     public function display(
         string $file,
-        bool $sendHeaderContentLength = false
-    ) : int|false {
+        bool $sendHeaderContentLength = false,
+        bool $allowRange = false,
+        bool $sendAsAttachment = false
+    ) : bool {
+        $file = $this->getNormalizeFile($file);
+        if (!$file || !is_file($file)) {
+            return false;
+        }
         $size = $this->size($file);
         if ($size === false) {
             return false;
         }
-
-        $file = $this->uploader->getDataDirectory() . '/'. $file;
-        $resource = fopen($file, 'rb');
-        $level = ob_get_level();
-        if ($level > 0) {
-            ob_end_flush();
-        }
-        if ($sendHeaderContentLength && !headers_sent()) {
-            header('Content-Length: %d', $size);
-        }
-        while (!feof($resource)) {
-            echo fread($resource, 8192);
-        }
-        fclose($resource);
-
-        // re-start buffer
-        if ($level > ob_get_level()) {
-            ob_start();
-        }
-        return $size;
+        $responder = (new FileResponder($file));
+        $responder->sendContentLength($sendHeaderContentLength);
+        $responder->setAllowRange($allowRange);
+        $responder->sendAsAttachment($sendAsAttachment);
+        // never
+        $responder->send();
     }
 }
