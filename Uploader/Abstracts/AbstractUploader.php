@@ -3,22 +3,21 @@ declare(strict_types=1);
 
 namespace ArrayAccess\TrayDigita\App\Modules\Media\Uploader\Abstracts;
 
+use ArrayAccess\TrayDigita\App\Modules\Media\Entities\Attachment;
+use ArrayAccess\TrayDigita\App\Modules\Media\Entities\UserAttachment;
 use ArrayAccess\TrayDigita\App\Modules\Media\Media;
 use ArrayAccess\TrayDigita\App\Modules\Media\Uploader\UploadedFileMetadata;
 use ArrayAccess\TrayDigita\App\Modules\Users\Entities\Admin;
-use ArrayAccess\TrayDigita\App\Modules\Users\Entities\Attachment;
 use ArrayAccess\TrayDigita\App\Modules\Users\Entities\User;
-use ArrayAccess\TrayDigita\App\Modules\Users\Entities\UserAttachment;
-use ArrayAccess\TrayDigita\Database\Connection;
 use ArrayAccess\TrayDigita\Database\Entities\Abstracts\AbstractAttachment;
 use ArrayAccess\TrayDigita\Database\Entities\Abstracts\AbstractUser;
 use ArrayAccess\TrayDigita\Exceptions\Runtime\RuntimeException;
 use ArrayAccess\TrayDigita\Http\UploadedFile;
+use ArrayAccess\TrayDigita\Traits\Database\ConnectionTrait;
 use ArrayAccess\TrayDigita\Traits\Service\TranslatorTrait;
 use ArrayAccess\TrayDigita\Uploader\Exceptions\UploadedFileExtensionException;
 use ArrayAccess\TrayDigita\Uploader\Exceptions\UploadedFileNameException;
 use ArrayAccess\TrayDigita\Util\Filter\Consolidation;
-use ArrayAccess\TrayDigita\Util\Filter\ContainerHelper;
 use ArrayAccess\TrayDigita\Util\Filter\MimeType;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -38,11 +37,14 @@ use const PHP_INT_MAX;
 
 class AbstractUploader
 {
-    final const TYPE_UPLOAD = AbstractAttachment::TYPE_UPLOAD;
-    final const TYPE_DATA = AbstractAttachment::TYPE_DATA;
-    final const TYPE_AVATAR = AbstractAttachment::TYPE_AVATAR;
+    final public const TYPE_UPLOAD = AbstractAttachment::TYPE_UPLOAD;
 
-    use TranslatorTrait;
+    final public const TYPE_DATA = AbstractAttachment::TYPE_DATA;
+
+    final public const TYPE_AVATAR = AbstractAttachment::TYPE_AVATAR;
+
+    use TranslatorTrait,
+        ConnectionTrait;
 
     public function __construct(public readonly Media $media)
     {
@@ -98,7 +100,7 @@ class AbstractUploader
     public function uploadPublic(
         ServerRequestInterface $request,
         UploadedFileInterface $uploadedFile,
-        AbstractUser $user
+        ?AbstractUser $user
     ): UploadedFileMetadata {
         return $this->uploadAttachment(
             $request,
@@ -126,8 +128,8 @@ class AbstractUploader
             throw new UploadedFileNameException(
                 $this->translateContext(
                     'File does not have file name',
-                    'module',
-                    'media-module'
+                    'media-module',
+                    'module'
                 )
             );
         }
@@ -141,18 +143,15 @@ class AbstractUploader
                 sprintf(
                     $this->translateContext(
                         'Could not determine file type from mimetype %s',
-                        'module',
-                        'media-module'
+                        'media-module',
+                        'module'
                     ),
                     $uploadedFile->getClientMediaType()
                 )
             );
         }
 
-        $em = ContainerHelper::service(
-            Connection::class,
-            $this->getContainer()
-        )->getEntityManager();
+        $em = $this->getEntityManager();
         /**
          * @var class-string<AbstractAttachment> $className
          */
@@ -257,8 +256,8 @@ class AbstractUploader
                 throw new RuntimeException(
                     $this->translateContext(
                         'Could not save uploaded file',
-                        'module',
-                        'media-module'
+                        'media-module',
+                        'module'
                     )
                 );
             }
@@ -269,8 +268,8 @@ class AbstractUploader
                 throw new RuntimeException(
                     $this->translateContext(
                         'Could not save uploaded file & determine target file.',
-                        'module',
-                        'media-module'
+                        'media-module',
+                        'module'
                     )
                 );
             }
@@ -293,6 +292,11 @@ class AbstractUploader
                 if ($user instanceof Admin || $user instanceof User) {
                     $attachment->setUser($user);
                     $attachment->setUserId($user->getId());
+                    $attachment->setSite($user->getSite());
+                } else {
+                    $attachment->setUser(null);
+                    $attachment->setUserId(null);
+                    $attachment->setSite(null);
                 }
 
                 $attachment->setFileName($originalFileName);

@@ -24,10 +24,16 @@
     <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
 
     <!-- Path To Check -->
-    <file>Servant/</file>
-    <file>Traits/</file>
-    <file>Uploader/</file>
-    <file>Media.php</file>
+    <!-- Path To Check -->
+    <file>.</file>
+    <exclude-pattern>vendor/</exclude-pattern>
+    <!-- constant visibility -->
+    <rule ref="PSR12.Properties">
+        <properties>
+            <property name="UseSpacing" value="1"/>
+            <property name="ConstantVisibility" value="1"/>
+        </properties>
+    </rule>
     <!-- Slevomat Ruleset -->
     <config name="installed_paths" value="vendor/slevomat/coding-standard/SlevomatCodingStandard"/>
     <!-- detect spacing -->

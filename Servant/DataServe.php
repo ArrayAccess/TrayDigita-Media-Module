@@ -75,7 +75,6 @@ final class DataServe
         return MimeType::fileMimeType($file);
     }
 
-    /** @noinspection PhpUnused */
     public function getLastModified(string $file) : ?DateTimeImmutable
     {
         $file = $this->getNormalizeFile($file);

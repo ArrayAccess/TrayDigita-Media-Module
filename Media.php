@@ -8,11 +8,12 @@ use ArrayAccess\TrayDigita\App\Modules\Media\Traits\MediaFilterTrait;
 use ArrayAccess\TrayDigita\App\Modules\Media\Traits\MediaPathTrait;
 use ArrayAccess\TrayDigita\App\Modules\Media\Uploader\AdminUpload;
 use ArrayAccess\TrayDigita\App\Modules\Media\Uploader\UserUpload;
-use ArrayAccess\TrayDigita\L10n\Translations\Adapter\Gettext\PoMoAdapter;
 use ArrayAccess\TrayDigita\Module\AbstractModule;
+use ArrayAccess\TrayDigita\Traits\Database\ConnectionTrait;
 use ArrayAccess\TrayDigita\Traits\Service\TranslatorTrait;
 use ArrayAccess\TrayDigita\Uploader\Chunk;
 use ArrayAccess\TrayDigita\Uploader\StartProgress;
+use ArrayAccess\TrayDigita\Util\Filter\Consolidation;
 use ArrayAccess\TrayDigita\Util\Filter\ContainerHelper;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
@@ -21,6 +22,7 @@ final class Media extends AbstractModule
 {
     use TranslatorTrait,
         MediaPathTrait,
+        ConnectionTrait,
         MediaFilterTrait;
 
     protected ?ServerRequestInterface $request = null;
@@ -41,8 +43,8 @@ final class Media extends AbstractModule
     {
         return $this->translateContext(
             'Media Manager',
-            'module',
-            'media-module'
+            'media-module',
+            'module'
         );
     }
 
@@ -50,27 +52,24 @@ final class Media extends AbstractModule
     {
         return $this->translateContext(
             'Module to make application support media & file attachments',
-            'module',
-            'media-module'
+            'media-module',
+            'module'
         );
     }
 
     protected function doInit(): void
     {
+        /** @noinspection DuplicatedCode */
         if ($this->didInit) {
             return;
         }
 
+        Consolidation::registerAutoloader(__NAMESPACE__, __DIR__);
         $this->didInit = true;
-        foreach ($this->getTranslator()?->getAdapters()??[] as $adapter) {
-            if ($adapter instanceof PoMoAdapter) {
-                $adapter->registerDirectory(
-                    __DIR__ .'/Languages',
-                    'media-module'
-                );
-            }
-        }
-
+        $kernel = $this->getKernel();
+        $kernel->registerControllerDirectory(__DIR__ .'/Controllers');
+        $this->getTranslator()?->registerDirectory('module', __DIR__ . '/Languages');
+        $this->getConnection()->registerEntityDirectory(__DIR__.'/Entities');
         $this->doFilterPath();
     }
 
@@ -84,7 +83,6 @@ final class Media extends AbstractModule
         $this->request = $request;
     }
 
-    /** @noinspection PhpUnused */
     public function getDataServe(): DataServe
     {
         return $this->dataServe ??= new DataServe($this);

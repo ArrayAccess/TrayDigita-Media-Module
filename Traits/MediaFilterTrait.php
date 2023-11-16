@@ -36,7 +36,7 @@ use const PATHINFO_FILENAME;
 
 trait MediaFilterTrait
 {
-    const SCRIPT_REGEX = '~\.(?:
+    public const SCRIPT_REGEX = '~\.(?:
         py          # python
         |php[0-9]*|hh  # php
         |[xp]?html[0-9]* # html
