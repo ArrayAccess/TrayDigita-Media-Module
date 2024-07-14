@@ -33,24 +33,24 @@ use Doctrine\ORM\Mapping\UniqueConstraint;
     columns: ['path', 'storage_type']
 )]
 #[Index(
-    columns: ['id', 'site_id'],
-    name: 'index_id_site_id'
+    name: 'index_id_site_id',
+    columns: ['id', 'site_id']
 )]
 #[Index(
-    columns: ['storage_type', 'mime_type'],
-    name: 'index_storage_type_mime_type'
+    name: 'index_storage_type_mime_type',
+    columns: ['storage_type', 'mime_type']
 )]
 #[Index(
-    columns: ['user_id'],
-    name: 'relation_user_attachments_user_id_users_id'
+    name: 'relation_user_attachments_user_id_users_id',
+    columns: ['user_id']
 )]
 #[Index(
-    columns: ['site_id'],
-    name: 'relation_user_attachments_site_id_sites_id'
+    name: 'relation_user_attachments_site_id_sites_id',
+    columns: ['site_id']
 )]
 #[Index(
-    columns: ['name', 'file_name', 'status', 'mime_type', 'storage_type', 'site_id'],
-    name: 'index_name_file_name_status_mime_type_storage_type_site_id'
+    name: 'index_name_file_name_status_mime_type_storage_type_site_id',
+    columns: ['name', 'file_name', 'status', 'mime_type', 'storage_type', 'site_id']
 )]
 #[HasLifecycleCallbacks]
 class UserAttachment extends AbstractAttachment
